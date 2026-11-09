@@ -88,6 +88,8 @@ php artisan migrate --force
 if [ "$FIRST_INSTALL" -eq 1 ]; then
     ADMIN_PASSWORD="$(openssl rand -base64 18 | tr -dc 'A-Za-z0-9' | head -c 14)Aa1"
     ADMIN_EMAIL="$ADMIN_EMAIL" ADMIN_PASSWORD="$ADMIN_PASSWORD" php artisan db:seed --force
+    # simpan sementara agar tidak hilang bila skrip berhenti di tengah jalan
+    echo "$ADMIN_EMAIL $ADMIN_PASSWORD" > /root/.ewallet-admin-initial; chmod 600 /root/.ewallet-admin-initial
 fi
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 
@@ -116,8 +118,15 @@ server {
 NGINX
 ln -sf /etc/nginx/sites-available/ewallet /etc/nginx/sites-enabled/ewallet
 rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl reload nginx
-systemctl enable --now php${PHP}-fpm nginx postgresql
+nginx -t
+systemctl enable --now php${PHP}-fpm postgresql
+if ! systemctl restart nginx; then
+    echo "!! Nginx gagal menyala. Program yang memakai port 80/443:"
+    ss -ltnp '( sport = :80 or sport = :443 )' || true
+    echo "!! Hentikan program tersebut (mis. apache2 atau container Docker), lalu jalankan ulang skrip ini."
+    exit 1
+fi
+systemctl enable nginx
 
 echo "==> Firewall"
 ufw allow OpenSSH >/dev/null; ufw allow 'Nginx Full' >/dev/null; ufw --force enable >/dev/null
@@ -132,9 +141,13 @@ fi
 echo
 echo "================ SELESAI ================"
 echo "Aplikasi : $(grep ^APP_URL .env | cut -d= -f2)"
-if [ -n "$ADMIN_PASSWORD" ]; then
-    echo "Admin    : ${ADMIN_EMAIL}"
-    echo "Password : ${ADMIN_PASSWORD}   <-- simpan sekarang, tidak ditampilkan lagi"
+if [ -f /root/.ewallet-admin-initial ]; then
+    read -r A_EMAIL A_PASS < /root/.ewallet-admin-initial
+    echo "Admin    : ${A_EMAIL}"
+    echo "Password : ${A_PASS}   <-- simpan sekarang, tidak ditampilkan lagi"
+    rm -f /root/.ewallet-admin-initial
+else
+    echo "Lupa password admin? Jalankan: cd ${APP_DIR} && sudo -u www-data php artisan admin:reset-password <email>"
 fi
 echo "Webhook Xendit: $(grep ^APP_URL .env | cut -d= -f2)/webhooks/xendit/invoice"
 echo "Isi XENDIT_SECRET_KEY & XENDIT_CALLBACK_TOKEN di ${APP_DIR}/.env lalu: php artisan config:cache"

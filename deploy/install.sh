@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instalasi Dompetku di VPS Ubuntu 22.04 / 24.04 (jalankan sebagai root).
+# Instalasi eWallet di VPS Ubuntu 22.04 / 24.04 (jalankan sebagai root).
 #
 #   curl -fsSL https://raw.githubusercontent.com/isiutek/eWallet/main/deploy/install.sh -o install.sh
 #   sudo bash install.sh dompet.domainanda.com admin@domainanda.com

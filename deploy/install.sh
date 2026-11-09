@@ -68,6 +68,7 @@ sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'
 
 echo "==> Mengambil kode aplikasi"
 if [ -d "$APP_DIR/.git" ]; then
+    git config --global --add safe.directory "$APP_DIR"
     git -C "$APP_DIR" fetch origin "$BRANCH" && git -C "$APP_DIR" reset --hard "origin/$BRANCH"
 else
     git clone -b "$BRANCH" "$REPO" "$APP_DIR"

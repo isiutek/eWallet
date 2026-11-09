@@ -13,7 +13,6 @@ ADMIN_EMAIL="${2:?Pakai: bash install.sh <domain-atau-ip> <email-admin>}"
 REPO="${REPO:-https://github.com/isiutek/eWallet.git}"
 BRANCH="${BRANCH:-main}"
 APP_DIR=/var/www/ewallet
-PHP=8.3
 DB_NAME=ewallet
 DB_USER=ewallet
 
@@ -21,12 +20,23 @@ DB_USER=ewallet
 export DEBIAN_FRONTEND=noninteractive
 
 echo "==> Memasang paket sistem"
-apt-get update -y
+apt-get update -y || true
 apt-get install -y software-properties-common ca-certificates curl gnupg git unzip ufw nginx postgresql
-if ! apt-cache show php${PHP}-fpm >/dev/null 2>&1; then
+
+# Bersihkan PPA ondrej/php yang gagal (mis. di rilis Ubuntu yang belum didukung PPA)
+if ! apt-get update -y 2>&1 | tee /tmp/apt-update.log >/dev/null || grep -q 'ondrej/php.*Release' /tmp/apt-update.log; then
+    rm -f /etc/apt/sources.list.d/ondrej-*php* && apt-get update -y
+fi
+
+# Pakai PHP bawaan Ubuntu jika >= 8.2, selain itu pakai PPA ondrej/php (PHP 8.3)
+php_ver() { apt-cache show php-fpm 2>/dev/null | grep -m1 '^Depends:' | grep -oE 'php[0-9]+\.[0-9]+' | head -1 | sed 's/php//'; }
+PHP="$(php_ver)"
+if [ -z "$PHP" ] || [ "$(printf '%s\n8.2\n' "$PHP" | sort -V | head -1)" != "8.2" ]; then
     add-apt-repository -y ppa:ondrej/php
     apt-get update -y
+    PHP=8.3
 fi
+echo "==> Memakai PHP ${PHP}"
 apt-get install -y php${PHP}-fpm php${PHP}-cli php${PHP}-pgsql php${PHP}-mbstring php${PHP}-xml php${PHP}-curl \
     php${PHP}-zip php${PHP}-gd php${PHP}-bcmath php${PHP}-intl
 if ! command -v composer >/dev/null; then

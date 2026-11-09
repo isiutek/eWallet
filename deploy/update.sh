@@ -12,6 +12,7 @@ npm ci && npm run build && rm -rf node_modules
 php artisan migrate --force
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 chown -R www-data:www-data "$APP_DIR"
-systemctl reload php8.3-fpm
+PHP="$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')"
+systemctl reload "php${PHP}-fpm"
 php artisan up
 echo "Pembaruan selesai."

@@ -8,5 +8,6 @@
     <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="remember"> Ingat saya</label>
     <button class="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5">Masuk</button>
 </form>
-<p class="mt-4 text-sm text-center">Belum punya akun? <a href="{{ route('register') }}" class="text-indigo-600 font-semibold">Daftar</a></p>
+<p class="mt-4 text-xs text-center text-slate-500">Lupa password? Hubungi admin untuk mereset password Anda.</p>
+<p class="mt-2 text-sm text-center">Belum punya akun? <a href="{{ route('register') }}" class="text-indigo-600 font-semibold">Daftar</a></p>
 @endsection

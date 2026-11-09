@@ -26,7 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-Route::middleware(['auth', 'active', '2fa'])->group(function () {
+Route::middleware(['auth', 'active', '2fa', 'password.changed'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('/transfer', [TransferController::class, 'create'])->name('transfer.create');
@@ -63,6 +63,9 @@ Route::middleware(['auth', 'active', '2fa'])->group(function () {
         Route::post('/settings', [AdminController::class, 'updateSettings']);
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::post('/users/{user}/toggle', [AdminController::class, 'toggleUser'])->name('users.toggle');
+        Route::post('/users/{user}/reset-password', [AdminController::class, 'resetPassword'])->name('users.reset-password');
+        Route::post('/users/{user}/reset-pin', [AdminController::class, 'resetPin'])->name('users.reset-pin');
+        Route::post('/users/{user}/reset-2fa', [AdminController::class, 'resetTwoFactor'])->name('users.reset-2fa');
         Route::get('/transactions', [AdminController::class, 'transactions'])->name('transactions');
         Route::get('/audit', [AdminController::class, 'auditLogs'])->name('audit');
     });

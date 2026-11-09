@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     Route::post('/login', [ApiController::class, 'login'])->middleware('throttle:login');
 
-    Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function () {
+    Route::middleware(['auth:sanctum', 'active', 'password.changed', 'throttle:api'])->group(function () {
         Route::post('/logout', [ApiController::class, 'logout']);
         Route::get('/me', [ApiController::class, 'me']);
         Route::get('/transactions', [ApiController::class, 'transactions']);

@@ -14,7 +14,7 @@ class User extends Authenticatable
 
     protected $fillable = ['name', 'email', 'phone', 'password'];
 
-    protected $attributes = ['role' => 'user', 'status' => 'active', 'failed_pin_attempts' => 0, 'failed_login_attempts' => 0];
+    protected $attributes = ['role' => 'user', 'status' => 'active', 'failed_pin_attempts' => 0, 'failed_login_attempts' => 0, 'must_change_password' => false];
 
     protected $hidden = ['password', 'remember_token', 'pin_hash', 'two_factor_secret'];
 
@@ -28,6 +28,7 @@ class User extends Authenticatable
             'pin_locked_until' => 'datetime',
             'login_locked_until' => 'datetime',
             'last_login_at' => 'datetime',
+            'must_change_password' => 'boolean',
         ];
     }
 

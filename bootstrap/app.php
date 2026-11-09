@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             '2fa' => \App\Http\Middleware\EnsureTwoFactorPassed::class,
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'active' => \App\Http\Middleware\EnsureAccountActive::class,
+            'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
         ]);
         $middleware->validateCsrfTokens(except: ['webhooks/*']);
         $middleware->redirectGuestsTo('/login');

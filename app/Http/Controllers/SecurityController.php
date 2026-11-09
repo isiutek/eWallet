@@ -73,10 +73,10 @@ class SecurityController extends Controller
             'current_password' => 'required|current_password',
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()->mixedCase()],
         ]);
-        $request->user()->forceFill(['password' => Hash::make($request->input('password'))])->save();
+        $request->user()->forceFill(['password' => Hash::make($request->input('password')), 'must_change_password' => false])->save();
         $request->user()->tokens()->delete(); // cabut semua token API
         AuditLog::record('password.changed');
 
-        return back()->with('status', 'Password diperbarui. Semua sesi API dicabut.');
+        return redirect()->route('security.index')->with('status', 'Password diperbarui. Semua sesi API dicabut.');
     }
 }

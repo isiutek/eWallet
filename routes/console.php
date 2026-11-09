@@ -14,13 +14,7 @@ Artisan::command('admin:reset-password {email}', function (string $email) {
 
         return 1;
     }
-    $password = \Illuminate\Support\Str::password(16, symbols: false).'Aa1';
-    $user->forceFill([
-        'password' => \Illuminate\Support\Facades\Hash::make($password),
-        'failed_login_attempts' => 0,
-        'login_locked_until' => null,
-    ])->save();
-    $user->tokens()->delete();
-    \App\Models\AuditLog::record('password.reset_cli', $user->id);
-    $this->info("Password baru untuk {$user->email}: {$password}");
+    $password = app(\App\Services\AccountRecoveryService::class)->resetPassword($user);
+    $this->info("Password sementara untuk {$user->email}: {$password}");
+    $this->line('Pengguna wajib mengganti password ini setelah login.');
 })->purpose('Buat password baru acak untuk pengguna (mis. admin yang lupa password)');

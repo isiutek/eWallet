@@ -9,6 +9,7 @@ use App\Models\Topup;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Services\AccountRecoveryService;
 use App\Services\ReportService;
 use App\Services\TopupService;
 use Illuminate\Http\Request;
@@ -112,6 +113,29 @@ class AdminController extends Controller
         AuditLog::record('admin.user.'.$user->status, null, ['target' => $user->id]);
 
         return back()->with('status', "Status {$user->email}: {$user->status}.");
+    }
+
+    public function resetPassword(Request $request, User $user, AccountRecoveryService $recovery)
+    {
+        abort_if($user->id === $request->user()->id, 422, 'Gunakan menu Keamanan untuk mengganti password sendiri.');
+        $temp = $recovery->resetPassword($user, $request->user()->id);
+
+        return back()->with('temp_password', ['email' => $user->email, 'name' => $user->name, 'password' => $temp]);
+    }
+
+    public function resetPin(Request $request, User $user, AccountRecoveryService $recovery)
+    {
+        $recovery->resetPin($user, $request->user()->id);
+
+        return back()->with('status', "PIN {$user->email} direset. Pengguna perlu membuat PIN baru di menu Keamanan.");
+    }
+
+    public function resetTwoFactor(Request $request, User $user, AccountRecoveryService $recovery)
+    {
+        abort_if($user->id === $request->user()->id, 422, 'Gunakan menu Keamanan untuk mengatur 2FA sendiri.');
+        $recovery->resetTwoFactor($user, $request->user()->id);
+
+        return back()->with('status', "2FA {$user->email} dinonaktifkan. Pengguna bisa login tanpa kode lalu mengaktifkan ulang 2FA.");
     }
 
     public function transactions(Request $request, ReportService $reports)

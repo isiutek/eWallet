@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        // Percayai reverse proxy lokal/Docker (Caddy, Nginx) agar IP asli & HTTPS terdeteksi benar
+        $middleware->trustProxies(at: ['127.0.0.1', '::1', '172.16.0.0/12', '10.0.0.0/8', '192.168.0.0/16']);
         $middleware->alias([
             '2fa' => \App\Http\Middleware\EnsureTwoFactorPassed::class,
             'admin' => \App\Http\Middleware\EnsureAdmin::class,

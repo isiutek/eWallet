@@ -19,6 +19,14 @@ DB_USER=ewallet
 [ "$(id -u)" -eq 0 ] || { echo "Jalankan sebagai root (sudo)."; exit 1; }
 export DEBIAN_FRONTEND=noninteractive
 
+# Bila port 80 sudah dipakai reverse proxy lain (mis. Caddy/Traefik di Docker), Nginx aplikasi
+# berjalan di port internal dan HTTPS diurus proxy tersebut.
+INTERNAL_PORT="${INTERNAL_PORT:-}"
+if [ -z "$INTERNAL_PORT" ] && ss -ltnp '( sport = :80 )' 2>/dev/null | grep -q docker-proxy; then
+    INTERNAL_PORT=8080
+fi
+LISTEN_PORT="${INTERNAL_PORT:-80}"
+
 echo "==> Memasang paket sistem"
 apt-get update -y || true
 apt-get install -y software-properties-common ca-certificates curl gnupg git unzip ufw nginx postgresql
@@ -69,7 +77,7 @@ cd "$APP_DIR"
 FIRST_INSTALL=0
 if [ ! -f .env ]; then
     FIRST_INSTALL=1
-    if [[ "$DOMAIN" =~ ^[0-9.]+$ ]]; then SCHEME=http; else SCHEME=https; fi
+    if [[ "$DOMAIN" =~ ^[0-9.]+$ ]] && [ -z "$INTERNAL_PORT" ]; then SCHEME=http; else SCHEME=https; fi
     cp .env.example .env
     sed -i "s|^APP_ENV=.*|APP_ENV=production|; s|^APP_DEBUG=.*|APP_DEBUG=false|; s|^APP_URL=.*|APP_URL=${SCHEME}://${DOMAIN}|" .env
     sed -i "s|^DB_HOST=.*|DB_HOST=127.0.0.1|; s|^DB_DATABASE=.*|DB_DATABASE=${DB_NAME}|; s|^DB_USERNAME=.*|DB_USERNAME=${DB_USER}|; s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASS}|" .env
@@ -100,8 +108,8 @@ chmod 640 .env
 echo "==> Konfigurasi Nginx"
 cat > /etc/nginx/sites-available/ewallet <<NGINX
 server {
-    listen 80;
-    server_name ${DOMAIN};
+    listen ${LISTEN_PORT};
+    server_name ${DOMAIN} _;
     root ${APP_DIR}/public;
     index index.php;
     client_max_body_size 8M;
@@ -129,9 +137,16 @@ fi
 systemctl enable nginx
 
 echo "==> Firewall"
-ufw allow OpenSSH >/dev/null; ufw allow 'Nginx Full' >/dev/null; ufw --force enable >/dev/null
+ufw allow OpenSSH >/dev/null
+if [ -n "$INTERNAL_PORT" ]; then
+    # hanya container Docker (jaringan 172.16.0.0/12) yang boleh mengakses port internal
+    ufw allow from 172.16.0.0/12 to any port "$INTERNAL_PORT" proto tcp >/dev/null
+else
+    ufw allow 'Nginx Full' >/dev/null
+fi
+ufw --force enable >/dev/null
 
-if [[ ! "$DOMAIN" =~ ^[0-9.]+$ ]]; then
+if [ -z "$INTERNAL_PORT" ] && [[ ! "$DOMAIN" =~ ^[0-9.]+$ ]]; then
     echo "==> Sertifikat HTTPS (Let's Encrypt)"
     apt-get install -y certbot python3-certbot-nginx
     certbot --nginx -d "$DOMAIN" -m "$ADMIN_EMAIL" --agree-tos --non-interactive --redirect \
@@ -148,6 +163,16 @@ if [ -f /root/.ewallet-admin-initial ]; then
     rm -f /root/.ewallet-admin-initial
 else
     echo "Lupa password admin? Jalankan: cd ${APP_DIR} && sudo -u www-data php artisan admin:reset-password <email>"
+fi
+if [ -n "$INTERNAL_PORT" ]; then
+    echo
+    echo "Aplikasi berjalan di port internal ${INTERNAL_PORT} di belakang reverse proxy Docker."
+    echo "Tambahkan blok ini ke Caddyfile, lalu reload Caddy:"
+    echo
+    echo "    ${DOMAIN} {"
+    echo "        reverse_proxy 172.17.0.1:${INTERNAL_PORT}"
+    echo "    }"
+    echo
 fi
 echo "Webhook Xendit: $(grep ^APP_URL .env | cut -d= -f2)/webhooks/xendit/invoice"
 echo "Isi XENDIT_SECRET_KEY & XENDIT_CALLBACK_TOKEN di ${APP_DIR}/.env lalu: php artisan config:cache"

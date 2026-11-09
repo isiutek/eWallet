@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -15,6 +16,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Di belakang reverse proxy HTTPS (Caddy), paksa semua URL & aset memakai https
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
+
         // Batas percobaan login per email+IP dan per IP
         RateLimiter::for('login', fn (Request $r) => [
             Limit::perMinute(5)->by(strtolower((string) $r->input('email')).'|'.$r->ip()),

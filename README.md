@@ -1,4 +1,4 @@
-# Dompetku: Aplikasi Dompet Digital (Laravel 11)
+# eWallet: Aplikasi Dompet Digital (Laravel 11)
 
 Aplikasi dompet digital berbasis web + REST API dengan fitur:
 

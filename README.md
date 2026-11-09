@@ -36,6 +36,19 @@ Akun awal dari seeder:
 
 **Segera ganti password admin di production.**
 
+## Pasang di VPS (Ubuntu 22.04 / 24.04)
+
+Arahkan DNS domain ke IP VPS, lalu di VPS sebagai root:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/isiutek/eWallet/main/deploy/install.sh -o install.sh
+sudo bash install.sh dompet.domainanda.com email@anda.com
+```
+
+Skrip memasang Nginx, PHP 8.3-FPM, PostgreSQL, Node.js, membuat database dengan password acak, build aplikasi, memasang HTTPS (Let's Encrypt), firewall, dan menampilkan **password admin acak** di akhir. Belum punya domain? Pakai IP VPS sebagai argumen pertama (tanpa HTTPS, hanya untuk uji coba).
+
+Memperbarui ke versi terbaru: `sudo bash /var/www/ewallet/deploy/update.sh`
+
 ## Mengaktifkan Xendit (isi saldo otomatis)
 
 1. Di dashboard Xendit, ambil **Secret API Key** (Settings → API Keys, izin *Money-in: Write*).

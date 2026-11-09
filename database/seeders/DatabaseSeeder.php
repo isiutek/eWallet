@@ -14,7 +14,10 @@ class DatabaseSeeder extends Seeder
         $wallets = app(WalletService::class);
         $pins = app(PinService::class);
 
-        $admin = User::firstOrCreate(['email' => 'admin@ewallet.test'], ['name' => 'Administrator', 'password' => 'Admin12345']);
+        $admin = User::firstOrCreate(
+            ['email' => env('ADMIN_EMAIL', 'admin@ewallet.test')],
+            ['name' => 'Administrator', 'password' => env('ADMIN_PASSWORD', 'Admin12345')]
+        );
         $admin->forceFill(['role' => 'admin'])->save();
         $wallets->createFor($admin);
 

@@ -1,0 +1,48 @@
+plugins {
+    id 'com.android.application'
+}
+
+// URL aplikasi web yang dibuka. Bisa diganti saat build: gradle assembleRelease -PappUrl=https://...
+def appUrl = project.findProperty('appUrl') ?: 'https://ewallet.isiutek.biz.id'
+def keystoreFile = System.getenv('ANDROID_KEYSTORE_FILE')
+
+android {
+    namespace 'id.biz.isiutek.ewallet'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'id.biz.isiutek.ewallet'
+        minSdk 24
+        targetSdk 35
+        versionCode((System.getenv('VERSION_CODE') ?: '1') as int)
+        versionName System.getenv('VERSION_NAME') ?: '1.0.0'
+        buildConfigField 'String', 'APP_URL', "\"${appUrl}\""
+        buildConfigField 'String', 'APP_HOST', "\"${new URI(appUrl).host}\""
+    }
+
+    buildFeatures { buildConfig true }
+
+    signingConfigs {
+        release {
+            if (keystoreFile) {
+                storeFile file(keystoreFile)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Tanpa keystore rilis (secret GitHub), APK ditandatangani dengan kunci debug agar tetap bisa dipasang.
+            signingConfig keystoreFile ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
